@@ -1,0 +1,608 @@
+<!-- shop.html (Main Page) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luweja Fashion Hub - Shop</title>
+    <meta name="description" content="Shop trendy clothing at Luweja Fashion Hub: Dresses, jackets, t-shirts, and jeans at affordable prices in Kenya.">
+    <meta name="keywords" content="fashion shop, trendy clothing Kenya, dresses, jackets">
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Basic styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+
+        header {
+            background-color: palevioletred;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        nav ul li a {
+            color: gold;
+            text-decoration: none;
+        }
+
+        #products {
+            padding: 20px;
+        }
+
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-section h3 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .product-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .product {
+            background-color: white;
+            border: 1px solid #ddd;
+            margin: 10px;
+            padding: 10px;
+            width: 220px;
+            text-align: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .product img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .product button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        #cart-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .modal-content ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px;
+            margin: 20px 0;
+            box-sizing: border-box;
+        }
+
+        #filters {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        #filters label {
+            margin-right: 10px;
+        }
+
+        #filters input, #filters select {
+            padding: 5px;
+            margin-right: 10px;
+        }
+
+        #payment-options button:hover {
+            opacity: 0.9;
+        }
+
+        #payment-form input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+
+        #payment-form label {
+            font-weight: bold;
+        }
+
+        #cart-button {
+            position: relative;
+            font-size: 20px;
+        }
+
+        #cart-count {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+        }
+
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        footer a {
+            color: gold;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 768px) {
+            .product-container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            let allProducts = []; // To store all product elements for sorting/filtering
+
+            // Collect all products on load
+            document.querySelectorAll('.product').forEach(product => {
+                allProducts.push({
+                    element: product,
+                    name: product.querySelector('h3').textContent.toLowerCase(),
+                    price: parseFloat(product.querySelector('.price').textContent.replace('Ksh ', ''))
+                });
+            });
+
+            function formatPrice(price) {
+                return `Ksh ${price.toFixed(2)}`;
+            }
+
+            function addToCart(productName, productPrice) {
+                const existingProduct = cart.find(item => item.name === productName);
+                if (existingProduct) {
+                    existingProduct.quantity++;
+                } else {
+                    cart.push({ name: productName, price: parseFloat(productPrice.replace('Ksh ', '')), quantity: 1 });
+                }
+                updateCart();
+                updateCartCount();
+            }
+
+            function updateCart() {
+                const cartItems = document.getElementById('cart-items');
+                cartItems.innerHTML = '';
+                let totalPrice = 0;
+                cart.forEach((item, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        ${item.name} - ${formatPrice(item.price)} x ${item.quantity}
+                        <button onclick="increaseQuantity(${index})">+</button>
+                        <button onclick="decreaseQuantity(${index})">-</button>
+                        <button onclick="removeItem(${index})">Remove</button>
+                    `;
+                    cartItems.appendChild(listItem);
+                    totalPrice += item.price * item.quantity;
+                });
+                const totalElement = document.createElement('p');
+                totalElement.textContent = `Total: ${formatPrice(totalPrice)}`;
+                cartItems.appendChild(totalElement);
+
+                // Add Clear Cart and Checkout buttons
+                const buttonsContainer = document.createElement('div');
+                buttonsContainer.style.marginTop = '10px';
+                buttonsContainer.innerHTML = `
+                    <button onclick="clearCart()" style="background-color: red; color: white; padding: 10px; margin-right: 10px;">Clear Cart</button>
+                    <button onclick="proceedToCheckout()" style="background-color: green; color: white; padding: 10px;">Checkout</button>
+                `;
+                cartItems.appendChild(buttonsContainer);
+
+                localStorage.setItem('cart', JSON.stringify(cart));
+            }
+            
+            function decreaseQuantity(index) {
+                if (cart[index].quantity > 1) {
+                    cart[index].quantity--;
+                } else {
+                    cart.splice(index, 1);
+                }
+                updateCart();
+                updateCartCount();
+            }
+
+            function increaseQuantity(index) {
+                cart[index].quantity++;
+                updateCart();
+                updateCartCount();
+            }
+
+            function removeItem(index) {
+                cart.splice(index, 1);
+                updateCart();
+                updateCartCount();
+            }
+
+            function clearCart() {
+                cart.length = 0;
+                updateCart();
+                updateCartCount();
+            }
+
+            function proceedToCheckout() {
+                if (cart.length === 0) {
+                    alert('Your cart is empty!');
+                    return;
+                }
+                closeCartModal();
+                document.getElementById('payment').scrollIntoView();
+            }
+
+            function updateCartCount() {
+                const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+                const countElement = document.getElementById('cart-count');
+                countElement.textContent = cartCount;
+                countElement.style.display = cartCount > 0 ? 'block' : 'none';
+            }
+
+            window.decreaseQuantity = decreaseQuantity;
+            window.increaseQuantity = increaseQuantity;
+            window.removeItem = removeItem;
+            window.clearCart = clearCart;
+            window.proceedToCheckout = proceedToCheckout;
+
+            function showPaymentForm(method) {
+                const paymentForm = document.getElementById('payment-form');
+                const selectedMethod = document.getElementById('selected-method');
+
+                selectedMethod.textContent = `You selected: ${method}`;
+                paymentForm.style.display = 'block';
+                paymentForm.scrollIntoView();
+
+                const dummyForm = document.getElementById('dummy-payment-form');
+                dummyForm.onsubmit = function (event) {
+                    event.preventDefault();
+                    alert(`Payment with ${method} is successful! Thank you for your purchase.`);
+                    clearCart(); // Clear cart after successful payment
+                    paymentForm.style.display = 'none';
+                    dummyForm.reset();
+                };
+            }
+
+            window.payWithMpesa = function () {
+                showPaymentForm('M-Pesa');
+            };
+
+            window.payWithCard = function () {
+                showPaymentForm('Credit/Debit Card');
+            };
+
+            window.payWithPayPal = function () {
+                showPaymentForm('PayPal');
+            };
+
+            document.querySelectorAll('.product button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const productElement = event.target.parentElement;
+                    const productName = productElement.querySelector('h3').textContent;
+                    const productPrice = productElement.querySelector('.price').textContent;
+                    addToCart(productName, productPrice);
+                });
+            });
+
+            window.openCartModal = function () {
+                document.getElementById('cart-modal').style.display = 'flex';
+            };
+
+            window.closeCartModal = function () {
+                document.getElementById('cart-modal').style.display = 'none';
+            };
+
+            // Enhanced Search with Category Support
+            document.getElementById('search-bar').addEventListener('keyup', function () {
+                applyFilters();
+            });
+
+            // Sorting and Filtering
+            document.getElementById('sort').addEventListener('change', applyFilters);
+            document.getElementById('min-price').addEventListener('input', applyFilters);
+            document.getElementById('max-price').addEventListener('input', applyFilters);
+
+            function applyFilters() {
+                const query = document.getElementById('search-bar').value.toLowerCase();
+                const sortValue = document.getElementById('sort').value;
+                const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
+                const maxPrice = parseFloat(document.getElementById('max-price').value) || Infinity;
+
+                // Filter products by search and price
+                const filteredProducts = allProducts.filter(product => {
+                    return product.name.includes(query) &&
+                           product.price >= minPrice &&
+                           product.price <= maxPrice;
+                });
+
+                // Sort filtered products
+                if (sortValue === 'price-asc') {
+                    filteredProducts.sort((a, b) => a.price - b.price);
+                } else if (sortValue === 'price-desc') {
+                    filteredProducts.sort((a, b) => b.price - a.price);
+                } else if (sortValue === 'name-asc') {
+                    filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+                } else if (sortValue === 'name-desc') {
+                    filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+                }
+
+                // Hide all categories initially
+                document.querySelectorAll('.category-section').forEach(category => {
+                    category.style.display = 'none';
+                });
+
+                let matchFound = false;
+                document.querySelectorAll('.category-section').forEach(category => {
+                    const categoryName = category.querySelector('h3') ? category.querySelector('h3').textContent.toLowerCase() : '';
+                    let categoryHasMatch = false;
+
+                    category.querySelectorAll('.product').forEach(product => {
+                        const name = product.querySelector('h3').textContent.toLowerCase();
+                        const price = parseFloat(product.querySelector('.price').textContent.replace('Ksh ', ''));
+                        if ((name.includes(query) || categoryName.includes(query)) && price >= minPrice && price <= maxPrice) {
+                            product.style.display = 'block';
+                            categoryHasMatch = true;
+                            matchFound = true;
+                        } else {
+                            product.style.display = 'none';
+                        }
+                    });
+
+                    category.style.display = categoryHasMatch ? 'block' : 'none';
+                });
+
+                document.getElementById('no-results').style.display = matchFound ? 'none' : 'block';
+            }
+
+            updateCart();
+            updateCartCount();
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Luweja Fashion Hub</h1>
+        <p>Your destination for trendy clothing</p>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="#">Shop</a></li>
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+
+    <input type="text" id="search-bar" class="search-bar" placeholder="Search products...">
+
+    <div id="filters">
+        <label for="sort">Sort by:</label>
+        <select id="sort">
+            <option value="">Default</option>
+            <option value="price-asc">Price Low to High</option>
+            <option value="price-desc">Price High to Low</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+        </select>
+        <label for="min-price">Min Price:</label>
+        <input type="number" id="min-price" placeholder="0">
+        <label for="max-price">Max Price:</label>
+        <input type="number" id="max-price" placeholder="Max">
+    </div>
+
+    <p id="no-results" style="display: none; text-align: center; color: #555;">No results found</p>
+
+    <section id="products">
+        <h2>Our Collection</h2>
+
+        <!-- Dresses Section -->
+        <section id="dresses" class="category-section">
+            <h3>Dresses</h3>
+            <div class="product-container">
+                <div class="product">
+                    <img src="Red-dress.jpeg" alt="Red Dress">
+                    <h3>Red Dress</h3>
+                    <p class="price">Ksh 1200</p>
+                    <button aria-label="Add Red Dress to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="blue-dress.jpg" alt="Blue Dress">
+                    <h3>Blue Dress</h3>
+                    <p class="price">Ksh 1500</p>
+                    <button aria-label="Add Blue Dress to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="black-maxi-dress.jpg" alt="Long black fitted evening gown with mesh long sleeves, square neckline, and a mermaid silhouette, styled with a satin waistband belt against a neutral grey backdrop">
+                    <h3>Black Maxi Dress</h3>
+                    <p class="price">Ksh 2000</p>
+                    <button aria-label="Add Black Maxi Dress to cart">Add to Cart</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Jackets Section -->
+        <section id="jackets" class="category-section">
+            <h3>Jackets</h3>
+            <div class="product-container">
+                <div class="product">
+                    <img src="blue-jacket.jpeg" alt="Blue Jacket">
+                    <h3>Blue Jacket</h3>
+                    <p class="price">Ksh 2500</p>
+                    <button aria-label="Add Blue Jacket to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="leather-jacket.jpg" alt="Leather Jacket">
+                    <h3>Leather Jacket</h3>
+                    <p class="price">Ksh 3500</p>
+                    <button aria-label="Add Leather Jacket to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="denim-jacket.jpg" alt="Denim jacket displayed on a hanger against a neutral background, showcasing its stylish design and fabric texture.">
+                    <h3>Denim Jacket</h3>
+                    <p class="price">Ksh 2800</p>
+                    <button aria-label="Add Denim Jacket to cart">Add to Cart</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- T-shirts Section -->
+        <section id="tshirts" class="category-section">
+            <h3>T-shirts</h3>
+            <div class="product-container">
+                <div class="product">
+                    <img src="white-tshirt.png" alt="White T-shirt">
+                    <h3>White T-shirt</h3>
+                    <p class="price">Ksh 500</p>
+                    <button aria-label="Add White T-shirt to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="black-tshirt.jpg" alt="Black T-shirt">
+                    <h3>Black T-shirt</h3>
+                    <p class="price">Ksh 600</p>
+                    <button aria-label="Add Black T-shirt to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="graphic-tshirt.jpg" alt="Graphic T-shirt">
+                    <h3>Graphic T-shirt</h3>
+                    <p class="price">Ksh 800</p>
+                    <button aria-label="Add Graphic T-shirt to cart">Add to Cart</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Jeans Section -->
+        <section id="jeans" class="category-section">
+            <h3>Jeans</h3>
+            <div class="product-container">
+                <div class="product">
+                    <img src="black-jeans.jpeg" alt="Black Jeans">
+                    <h3>Black Jeans</h3>
+                    <p class="price">Ksh 1800</p>
+                    <button aria-label="Add Black Jeans to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="blue-jeans.jpg" alt="Blue Jeans">
+                    <h3>Blue Jeans</h3>
+                    <p class="price">Ksh 1900</p>
+                    <button aria-label="Add Blue Jeans to cart">Add to Cart</button>
+                </div>
+                <div class="product">
+                    <img src="ripped-jeans.jpg" alt="Ripped Jeans">
+                    <h3>Ripped Jeans</h3>
+                    <p class="price">Ksh 2200</p>
+                    <button aria-label="Add Ripped Jeans to cart">Add to Cart</button>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <button id="cart-button" onclick="openCartModal()"><i class="fas fa-shopping-cart"></i> View Cart <span id="cart-count" style="display: none;"></span></button>
+
+    <div id="cart-modal" aria-hidden="true">
+        <div class="modal-content">
+            <span onclick="closeCartModal()" style="cursor:pointer; float: right;" aria-label="Close cart">&times;</span>
+            <h2>Shopping Cart</h2>
+            <ul id="cart-items"></ul>
+        </div>
+    </div>
+
+    <section id="payment">
+        <h2>Payment Methods</h2>
+        <p>Select your preferred payment method:</p>
+        <div id="payment-options" style="display: flex; gap: 20px; justify-content: center;">
+            <button onclick="payWithMpesa()" style="padding: 10px; background-color: green; color: white; border: none; cursor: pointer; border-radius: 5px;">Pay with M-Pesa</button>
+            <button onclick="payWithCard()" style="padding: 10px; background-color: blue; color: white; border: none; cursor: pointer; border-radius: 5px;">Pay with Card</button>
+            <button onclick="payWithPayPal()" style="padding: 10px; background-color: #f6b93b; color: black; border: none; cursor: pointer; border-radius: 5px;">Pay with PayPal</button>
+        </div>
+    </section>
+
+    <div id="payment-form" style="display: none; margin: 20px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        <h3 id="selected-method"></h3>
+        <p>Fill in your details below:</p>
+        <form id="dummy-payment-form">
+            <label for="name">Name:</label><br>
+            <input type="text" id="name" name="name" placeholder="Your Name" required><br><br>
+
+            <label for="details">Payment Details:</label><br>
+            <input type="text" id="details" name="details" placeholder="e.g., Card Number or M-Pesa Code" required><br><br>
+
+            <button type="submit" style="padding: 10px; background-color: #333; color: white; border: none; cursor: pointer; border-radius: 5px;">Submit Payment</button>
+        </form>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Luweja Fashion Hub. All rights reserved.</p>
+        <div>
+            <a href="https://facebook.com/luwejafashion" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>
+            <a href="https://instagram.com/luwejafashion" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
+            <a href="https://twitter.com/luwejafashion" target="_blank"><i class="fab fa-twitter"></i> Twitter</a>
+        </div>
+    </footer>
+</body>
+</html>
